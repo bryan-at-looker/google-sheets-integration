@@ -237,7 +237,11 @@ function onOpen() {
     {name: 'Sync with Stitch', functionName: 'push'},
     {name: 'Setup Spreadsheet For Push', functionName: 'onInstall'}
   ];
+    var menuItems2 = [
+    {name: 'Unpivot Quotas', functionName: 'transformData'},
+  ];
   spreadsheet.addMenu('Stitch Import', menuItems);
+  spreadsheet.addMenu('Unpivot Table', menuItems2);
   function auth() {}
   auth()
 }
@@ -350,4 +354,70 @@ function isAlnum(char) {
 // Returns true if the character char is a digit, false otherwise.
 function isDigit(char) {
   return char >= '0' && char <= '9';
+}
+
+function transformData(){
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  try {
+    data_sheet = ss.setActiveSheet(ss.getSheetByName('Quota Table'));
+    
+  } catch (e) {
+    ss.insertSheet('Quota Table');
+    data_sheet = ss.setActiveSheet(ss.getSheetByName('Quota Table'));
+  }
+  
+  var dont_unpivot_columns = 2
+  var data = data_sheet.getDataRange().getValues();//read whole sheet
+  var num_rows = data.length;
+  var headers = data[0];// get headers
+  var column_headers = headers.slice(0,dont_unpivot_columns);
+  var unpivot_headers = headers.slice(dont_unpivot_columns);
+  var num_columns = headers.length;
+  var num_unpivot_headers = unpivot_headers.length;
+  var pivot_data = data.slice(1);
+
+  var quotas = [];
+  var people = [];
+    for(var d in pivot_data){
+      var q = pivot_data[d].slice(dont_unpivot_columns);
+      var p = pivot_data[d].slice(0,dont_unpivot_columns);
+      quotas.push(q);
+      people.push(p);
+    } 
+  Logger.log('quotas = '+quotas); 
+  Logger.log('people = '+people); 
+
+  column_headers.push('quota')
+  column_headers.unshift('row_id')
+  Logger.log('column_headers = '+column_headers);
+  var output = [];
+  output.push(column_headers)
+  var ct = 0
+  for (var p in people) {
+    var pp = people[p]
+    var qp = quotas[p];
+    for (var qpc in qp) {
+      ct = ct+1;
+      var row = [];
+      row.push(ct);
+      row = row.concat(pp.slice());
+      row.push(qp[qpc]);
+      output.push(row);
+    }
+  }
+  Logger.log('output = '+output);
+  
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet_name = 'quota_import';   
+  try {
+    ss.setActiveSheet(ss.getSheetByName(sheet_name));
+  } catch (e) {
+    ss.insertSheet(sheet_name);
+  }
+  ss_sheet = ss.getActiveSheet();
+  ss_sheet.clearContents();
+  
+  Logger.log('outputLength = '+output.length);
+  Logger.log('output0Length = '+output[0].length);
+  ss_sheet.getRange(1,1,output.length,output[0].length).setValues(output);
 }
