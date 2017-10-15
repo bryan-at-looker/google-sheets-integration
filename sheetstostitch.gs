@@ -387,6 +387,7 @@ function transformData(){
   Logger.log('quotas = '+quotas); 
   Logger.log('people = '+people); 
 
+  column_headers.push('date')
   column_headers.push('quota')
   column_headers.unshift('row_id')
   Logger.log('column_headers = '+column_headers);
@@ -401,6 +402,7 @@ function transformData(){
       var row = [];
       row.push(ct);
       row = row.concat(pp.slice());
+      row.push(unpivot_headers[qpc]);
       row.push(qp[qpc]);
       output.push(row);
     }
